@@ -1,6 +1,6 @@
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 
-const baseURL = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api`
+const baseURL = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api` || 'http://localhost:8080/api'
 
 // Create axios instance with default config
 export const api = axios.create({

@@ -9,7 +9,7 @@ export enum UserStatus {
 }
 
 export interface User { 
-    id: string;
+    id: number;
     email: string;
     role: UserRole;
     status: UserStatus;

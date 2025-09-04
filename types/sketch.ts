@@ -22,7 +22,7 @@ export enum SketchStyle {
 }
 
 export interface Sketch {
-    id: string;
+    id: number;
     original_image_url: string;
     sketch_image_url: string;
     status: SketchStatus;
