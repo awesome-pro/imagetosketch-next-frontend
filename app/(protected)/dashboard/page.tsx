@@ -71,7 +71,7 @@ export default function DashboardPage() {
     setUploadedFileKey(null);
   };
 
-  const handleUploadComplete = async (file: File) => {
+  const handleUpload = async (file: File) => {
     try {
       const result = await uploadFile(file);
       setUploadedFileKey(result.key);
@@ -79,6 +79,7 @@ export default function DashboardPage() {
       toast.success("File uploaded successfully! Now configure your sketch.");
     } catch (error) {
       console.error('Upload failed:', error);
+      toast.error("Upload failed. Please try again.");
     }
   };
 
@@ -213,7 +214,7 @@ export default function DashboardPage() {
                 <CardContent>
                   <FileUpload
                     onFileSelect={handleFileSelect}
-                    onUploadComplete={({ key }) => setUploadedFileKey(key)}
+                    onUpload={handleUpload}
                     isUploading={isUploading}
                     progress={progress}
                     error={uploadError}

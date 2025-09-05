@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 
 interface FileUploadProps {
   onFileSelect: (file: File) => void;
-  onUploadComplete: (result: { key: string; success: boolean }) => void;
+  onUpload?: (file: File) => void;
   isUploading?: boolean;
   progress?: number;
   error?: string | null;
@@ -20,7 +20,7 @@ interface FileUploadProps {
 
 export function FileUpload({
   onFileSelect,
-  onUploadComplete,
+  onUpload,
   isUploading = false,
   progress = 0,
   error,
@@ -135,7 +135,7 @@ export function FileUpload({
                   {formatFileSize(selectedFile.size)} • {selectedFile.type}
                 </p>
                 
-                {isUploading && (
+                {isUploading ? (
                   <div className="space-y-2">
                     <div className="flex justify-between text-xs text-gray-500">
                       <span>Uploading...</span>
@@ -143,6 +143,17 @@ export function FileUpload({
                     </div>
                     <Progress value={progress} className="h-2" />
                   </div>
+                ) : (
+                  onUpload && (
+                    <Button 
+                      onClick={() => onUpload(selectedFile)}
+                      className="w-full mt-3"
+                      size="sm"
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      Upload File
+                    </Button>
+                  )
                 )}
               </div>
             </div>
