@@ -14,8 +14,6 @@ import {
   Bell,
   Trash2,
   Download,
-  AlertTriangle,
-  CheckCircle,
   Info
 } from 'lucide-react';
 import { toast } from "sonner";
@@ -23,15 +21,6 @@ import { toast } from "sonner";
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
   const [isDeleting, setIsDeleting] = useState(false);
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      toast.success("Signed out successfully");
-    } catch (error) {
-      toast.error("Failed to sign out");
-    }
-  };
 
   const handleDeleteAccount = async () => {
     const confirmed = window.confirm(
@@ -133,7 +122,7 @@ export default function SettingsPage() {
                 <div>
                   <label className="text-sm font-medium text-gray-700">Member Since</label>
                   <p className="mt-1 text-sm text-gray-900">
-                    {user?.created_at ? formatDate(user.created_at) : 'N/A'}
+                    {/* {user?.created_at ? formatDate(user.created_at) : 'N/A'} */}
                   </p>
                 </div>
               </div>
@@ -257,7 +246,10 @@ export default function SettingsPage() {
               </Button>
               
               <Button 
-                onClick={handleSignOut}
+                onClick={async () => {
+                  await signOut();
+                  toast.success("Signed out successfully");
+                }}
                 variant="outline" 
                 className="w-full justify-start"
               >

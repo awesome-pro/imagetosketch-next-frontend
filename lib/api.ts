@@ -2,41 +2,66 @@ import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 
 const baseURL = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api` || 'http://localhost:8080/api'
 
-// Create axios instance with default config
+interface APIError {
+  detail: string | Array<{
+    type: string;
+    loc: (string | number)[];
+    msg: string;
+    input?: any;
+    ctx?: Record<string, any>;
+  }>;
+}
+
+export class APIErrorHandler extends Error {
+  public status: number;
+  public detail: APIError['detail'];
+  public headers?: Record<string, string>;
+
+  constructor(status: number, detail: APIError['detail'], headers?: Record<string, string>) {
+    const message = typeof detail === 'string' 
+      ? detail 
+      : detail.map(err => `${err.loc.join('.')}: ${err.msg}`).join(', ');
+    
+    super(message);
+    this.name = 'APIError';
+    this.status = status;
+    this.detail = detail;
+    this.headers = headers;
+  }
+}
+
+
 export const api = axios.create({
   baseURL,
   headers: {
     "Content-Type": "application/json",
+    "Accept": "application/json",
   },
-  withCredentials: true, // Important for sending cookies
+  withCredentials: true,
+  timeout: 60000,
 });
 
-// Track if a token refresh is in progress
 let isRefreshing = false;
-// Store pending requests that should be retried after token refresh
 let failedQueue: Array<{
   resolve: (value: unknown) => void;
   reject: (reason?: any) => void;
   config: AxiosRequestConfig;
 }> = [];
 
-// Process the queue of failed requests
 const processQueue = (error: AxiosError | null) => {
   failedQueue.forEach(request => {
     if (error) {
       request.reject(error);
     } else {
-      request.resolve(request.config);
+      api(request.config).then(request.resolve).catch(request.reject);
     }
   });
   
   failedQueue = [];
 };
 
-// Handle token refresh
 const refreshAuthToken = async () => {
   try {
-    // Call the session refresh API endpoint
     const response = await fetch('/api/auth/session', {
       method: 'GET',
       credentials: 'include',
@@ -45,8 +70,8 @@ const refreshAuthToken = async () => {
         'Accept': 'application/json'
       }
     });
-    
-    if (!response.ok) {
+
+    if (!response.ok || response.status !== 200) {
       throw new Error('Failed to refresh token');
     }
     
@@ -59,16 +84,23 @@ const refreshAuthToken = async () => {
 };
 
 api.interceptors.response.use(
-  (response: AxiosResponse) => response,
+  (response: AxiosResponse) => {
+    return response;
+  },
   async (error: AxiosError) => {
     const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    
+    if (!error.response) {
+      return Promise.reject(new Error('Network error - please check your connection'));
+    }
+    
+    const { status, data, headers } = error.response;
+    
+    if (status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject, config: originalRequest });
-        })
-          .then(config => api(config as AxiosRequestConfig))
-          .catch(err => Promise.reject(err));
+        });
       }
       
       originalRequest._retry = true;
@@ -80,22 +112,59 @@ api.interceptors.response.use(
         if (refreshed) {
           processQueue(null);
           setTimeout(() => {
-            return Promise.resolve()
-          }, 1000);
+            return api(originalRequest);
+          }, 500);
         } else {
           processQueue(error);
-          window.location.href = '/auth/sign-in';
-          return Promise.reject(error);
+          if (typeof window !== 'undefined') {
+            window.location.href = '/auth/sign-in';
+          }
+          return Promise.reject(new APIErrorHandler(401, 'Authentication failed'));
         }
       } catch (refreshError) {
         processQueue(error);
-        window.location.href = '/auth/sign-in';
-        return Promise.reject(refreshError);
+        if (typeof window !== 'undefined') {
+          window.location.href = '/auth/sign-in';
+        }
+        return Promise.reject(new APIErrorHandler(401, 'Token refresh failed'));
       } finally {
         isRefreshing = false;
       }
     }
-    return Promise.reject(error.response?.data);
+    
+    if (status === 403) {
+      const errorDetail = (data as APIError)?.detail || 'Access forbidden';
+      return Promise.reject(new APIErrorHandler(403, errorDetail, headers as Record<string, string>));
+    }
+    
+    if (status === 422) {
+      const errorDetail = (data as APIError)?.detail || 'Validation error';
+      return Promise.reject(new APIErrorHandler(422, errorDetail, headers as Record<string, string>));
+    }
+    
+    if (status === 429) {
+      const retryAfter = headers?.['retry-after'];
+      const errorDetail = (data as APIError)?.detail || 'Too many requests';
+      
+      console.warn(`Rate limited. Retry after: ${retryAfter} seconds`);
+      
+      return Promise.reject(new APIErrorHandler(429, errorDetail, headers as Record<string, string>));
+    }
+    
+    if (status >= 400 && status < 500) {
+      const errorDetail = (data as APIError)?.detail || `Client error: ${status}`;
+      return Promise.reject(new APIErrorHandler(status, errorDetail, headers as Record<string, string>));
+    }
+    
+    if (status >= 500) {
+      const errorDetail = (data as APIError)?.detail || 'Internal server error';
+      
+      console.error(`Server error ${status}:`, errorDetail);
+      
+      return Promise.reject(new APIErrorHandler(status, errorDetail, headers as Record<string, string>));
+    }
+    
+    return Promise.reject(error);
   }
 );
 

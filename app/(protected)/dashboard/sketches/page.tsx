@@ -20,8 +20,8 @@ import {
   List
 } from 'lucide-react';
 import { Sketch, SketchStatus } from "@/types/sketch";
-import { uploadService } from "@/services";
 import { toast } from "sonner";
+import Image from 'next/image';
 
 export default function GalleryPage() {
   const { sketches, loadSketches, deleteSketch, isLoading } = useSketch();
@@ -37,8 +37,6 @@ export default function GalleryPage() {
 
   useEffect(() => {
     let filtered = sketches;
-
-    // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(sketch => 
         sketch.id.toString().includes(searchTerm) ||
@@ -46,7 +44,6 @@ export default function GalleryPage() {
       );
     }
 
-    // Filter by status
     if (statusFilter !== "all") {
       filtered = filtered.filter(sketch => sketch.status === statusFilter);
     }
@@ -56,13 +53,9 @@ export default function GalleryPage() {
 
   const handleDownload = async (sketch: Sketch) => {
     try {
-      // Extract key from sketch_image_url (assuming it's stored as s3://key format)
-      const key = sketch.sketch_image_url.replace('s3://', '');
-      const downloadData = await uploadService.getDownloadUrl(key);
-      
       // Create a temporary link to download the file
       const link = document.createElement('a');
-      link.href = downloadData.download_url;
+      link.href = sketch.sketch_image_url
       link.download = `sketch-${sketch.id}.png`;
       document.body.appendChild(link);
       link.click();
@@ -101,22 +94,22 @@ export default function GalleryPage() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString([], {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
   const GridView = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {filteredSketches.map((sketch) => (
         <Card key={sketch.id} className="overflow-hidden hover:shadow-lg transition-shadow">
           <div className="aspect-square bg-gray-100 flex items-center justify-center">
-            <ImageIcon className="w-16 h-16 text-gray-400" />
+            {
+              sketch.sketch_image_url && (
+                <Image
+                  src={sketch.sketch_image_url}
+                  alt={`Sketch image of ${sketch.id}`}
+                  width={600}
+                  height={800}
+                  className="w-full h-auto rounded-lg shadow-2xl"
+                />
+              )
+            }
           </div>
           
           <CardContent className="p-4">
@@ -151,9 +144,13 @@ export default function GalleryPage() {
                     <DialogTitle>Sketch #{selectedSketch?.id}</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4">
-                    <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center">
-                      <ImageIcon className="w-24 h-24 text-gray-400" />
-                    </div>
+                    <Image 
+                      src={selectedSketch?.original_image_url || ""}
+                      alt={`Sketch of ${selectedSketch?.id}`}
+                      width={600}
+                      height={800}
+                      className="w-full h-auto rounded-lg shadow-2xl"
+                    />
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
                         <strong>Style:</strong> {selectedSketch?.style}
@@ -206,7 +203,17 @@ export default function GalleryPage() {
           <CardContent className="p-4">
             <div className="flex items-center space-x-4">
               <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                <ImageIcon className="w-8 h-8 text-gray-400" />
+               {
+                sketch.sketch_image_url && (
+                  <Image
+                    src={sketch.sketch_image_url}
+                    alt={`Sketch image of ${sketch.id}`}
+                    width={600}
+                    height={800}
+                    className="w-full h-auto rounded-lg shadow-2xl"
+                  />
+                )
+               }
               </div>
               
               <div className="flex-grow">
