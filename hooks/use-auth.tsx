@@ -13,7 +13,8 @@ import { useRouter, usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { LoginInput, RegisterInput, User, UserStatus } from "@/types";
 import authApi from "@/services/auth.service";
-import { LoaderIcon } from "lucide-react";
+import { LoaderIcon, LoaderPinwheelIcon } from "lucide-react";
+import Link from "next/link";
 
 
 interface AuthState{
@@ -235,18 +236,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   if (!mounted) {
     return (
-      <main className="w-screen h-screen flex items-center justify-center">
-        <p>Please wait...</p>
+      <main className="w-screen h-screen flex flex-col items-center justify-center gap-4">
+        <LoaderPinwheelIcon className="h-12 w-12 animate-spin mb-4" />
+
+        <h6>
+          <Link href={'https://abhinandan.pro'} target="_blank" className="text-primary font-semibold mr-2">Abhinandan</Link> is trying to mount up the React Context...
+        </h6>
       </main>
     )
   }
 
   if (!state.isInitialized && !isAuthPage) {
     return (
-      <section className="flex items-center justify-center h-screen w-screen">
-        <LoaderIcon
-          className="w-4 h-4 animate-spin"
+      <section className="flex flex-col items-center justify-center h-screen w-screen gap-4">
+        <LoaderPinwheelIcon
+          className="h-12 w-12 animate-spin mb-4"
         />
+
+        <h6>
+          <Link href={'https://abhinandan.pro'} target="_blank" className="text-primary font-semibold mr-2">Abhinandan</Link> is initializing the useAuth to make sure its you ❤️
+        </h6>
       </section>
     );
   }

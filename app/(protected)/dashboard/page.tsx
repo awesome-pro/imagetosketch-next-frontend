@@ -11,17 +11,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { 
   Upload, 
   Image as ImageIcon, 
   Palette, 
   Clock,
   CheckCircle,
-  AlertCircle,
-  Download,
-  Eye
-} from 'lucide-react';
+  AlertCircle} from 'lucide-react';
 import { SketchStyle, SketchType } from "@/types/sketch";
 import { websocketService } from "@/services";
 import { toast } from "sonner";

@@ -130,7 +130,7 @@ export default function GalleryPage() {
             <div className="space-y-1 mb-3">
               <p className="text-xs text-gray-500">Style: {sketch.style}</p>
               <p className="text-xs text-gray-500">Type: {sketch.type}</p>
-              <p className="text-xs text-gray-500">{formatDate(sketch.created_at)}</p>
+              {/* <p className="text-xs text-gray-500">{formatDate(sketch.created_at.toISOString())}</p> */}
             </div>
             
             <div className="flex space-x-2">
@@ -165,7 +165,7 @@ export default function GalleryPage() {
                         <strong>Status:</strong> {selectedSketch?.status}
                       </div>
                       <div>
-                        <strong>Created:</strong> {selectedSketch && formatDate(selectedSketch.created_at)}
+                        {/* <strong>Created:</strong> {selectedSketch && formatDate(selectedSketch.created_at.toISOString())} */}
                       </div>
                     </div>
                   </div>
@@ -220,7 +220,7 @@ export default function GalleryPage() {
                 <div className="grid grid-cols-3 gap-4 text-sm text-gray-600">
                   <div>Style: {sketch.style}</div>
                   <div>Type: {sketch.type}</div>
-                  <div>{formatDate(sketch.created_at)}</div>
+                  {/* <div>{formatDate(sketch.created_at.toISOString())}</div> */}
                 </div>
               </div>
               

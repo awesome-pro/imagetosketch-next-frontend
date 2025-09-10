@@ -1,5 +1,5 @@
 import { api } from "@/lib/api";
-import { User } from "@/types";
+import { GoogleOAuthCallback, GoogleOAuthRequest, GoogleOAuthURL, User } from "@/types";
 import { LoginInput, RegisterInput } from "@/types";
 
 const authApi = {
@@ -26,6 +26,16 @@ const authApi = {
 
     resendVerificationEmail: async (email: string) => {
       return api.post('/auth/resend-verification-email', { email });
+    },
+    getGoogleAuthUrl: async () => {
+      return api.get<GoogleOAuthURL>('/auth/google/url');
+    },
+    googleOAuthCallback: async (callbackData: GoogleOAuthCallback) => {
+      return api.post<User>('/auth/google/callback', callbackData);
+    },
+
+    googleOAuthVerify: async (tokenData: GoogleOAuthRequest) => {
+      return api.post<User>('/auth/google/verify', tokenData);
     },
   };
 
