@@ -45,7 +45,7 @@ export default function GoogleCallbackPage() {
           setTimeout(() => {
             switch(user.status) {
               case UserStatus.ACTIVE:
-                 window.location.href = '/dashboard'
+                 window.location.href = '/app'
                 break
               case UserStatus.INACTIVE:
                 window.location.href = '/auth/inactive'
