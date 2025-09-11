@@ -12,3 +12,9 @@ export async function GET(request: NextRequest) {
     }
     return NextResponse.json({ isSignedIn: false });
 }
+
+export async function DELETE(request: NextRequest) {
+    const cookieStore = await cookies();
+    cookieStore.delete(AUTH_TOKEN_KEY);
+    return NextResponse.json({ isSignedIn: false });
+}
