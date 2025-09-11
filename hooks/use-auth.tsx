@@ -13,11 +13,10 @@ import { useRouter, usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { LoginInput, RegisterInput, User, UserStatus } from "@/types";
 import authApi from "@/services/auth.service";
-import { LoaderIcon, LoaderPinwheelIcon } from "lucide-react";
+import { LoaderPinwheelIcon } from "lucide-react";
 import Link from "next/link";
 
-
-interface AuthState{
+interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   isInitialized: boolean;
@@ -30,7 +29,8 @@ type AuthAction =
   | { type: "SET_LOADING"; payload: boolean }
   | { type: "SET_ERROR"; payload: string | null }
   | { type: "UPDATE_SESSION"; payload: Partial<AuthState> }
-  | { type: "SIGN_OUT" };
+  | { type: "SIGN_OUT" }
+  | { type: "RESET_TO_UNAUTHENTICATED" };
 
 interface AuthContextType extends AuthState {
   signIn: (input: LoginInput) => Promise<{ user: User | null; error?: { code: string; message: string } }>;
@@ -58,11 +58,19 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
       return { ...state, ...action.payload };
     case "SIGN_OUT":
       return { ...initialState, isInitialized: true, isLoading: false };
+    case "RESET_TO_UNAUTHENTICATED":
+      return { 
+        ...initialState, 
+        isInitialized: true, 
+        isLoading: false,
+        isAuthenticated: false,
+        user: null,
+        error: null
+      };
     default:
       return state;
   }
 };
-
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -73,7 +81,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   const isAuthPage = pathname?.startsWith("/auth/");
-  
+
+  // Helper function to clear any existing session/cookies and redirect to sign-in
+  const forceSignOut = useCallback(async (showToast = true) => {
+    try {
+      // Clear any server-side session
+      await fetch("/api/auth/session", {
+        method: "DELETE",
+        credentials: "include",
+      });
+    } catch (error) {
+      // Ignore errors when clearing session
+      console.warn("Failed to clear server session:", error);
+    }
+
+    dispatch({ type: "RESET_TO_UNAUTHENTICATED" });
+    
+    if (showToast && !isAuthPage) {
+      toast.error('Session invalid. Please sign in again.', { duration: 5000 });
+    }
+    
+    if (!isAuthPage) {
+      const redirectUrl = encodeURIComponent(window.location.pathname);
+      router.push(`/auth/sign-in?redirectUrl=${redirectUrl}`);
+    }
+  }, [router, isAuthPage]);
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -83,146 +116,162 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         dispatch({ type: "SET_LOADING", payload: true });
 
+        // Step 1: Check if there's a valid session
         const sessionResponse = await fetch("/api/auth/session", {
           method: "GET",
           credentials: "include",
         });
 
+        // If session endpoint fails or returns non-ok status, force sign out
+        if (!sessionResponse.ok) {
+          console.warn("Session check failed:", sessionResponse.status);
+          await forceSignOut(false);
+          return;
+        }
 
         const session = await sessionResponse.json();
 
-        if (session?.isSignedIn && sessionResponse.ok) {
-          let userData = session.user;
-          
-          if (!userData) {
-            try {
-              userData = (await authApi.getMe()).data;
-            } catch (error: any) {
-              dispatch({
-                type: "SET_ERROR",
-                payload: "Failed to fetch user data"
-              });
-              return;
-            }
-          }
-
-          if (userData) {
-            dispatch({
-              type: "INITIALIZE",
-              payload: {
-                ...initialState,
-                isAuthenticated: true,
-                user: {
-                  ...userData,
-                },
-                error: null,
-                isLoading: false,
-              },
-            });
-
-            if (isAuthPage){
-              switch(userData.status){            
-                case UserStatus.INACTIVE:
-                  router.push('/inactive');
-                  break;
-                case UserStatus.ACTIVE:
-                  router.push("/dashboard");
-                  break;
-                default:
-                  router.push("/account/status");
-                  break;
-              }
-            }
-            return;
-          }
+        // If no valid session or user is not signed in, force sign out
+        if (!session?.isSignedIn) {
+          console.warn("No valid session found");
+          await forceSignOut(!isAuthPage);
+          return;
         }
 
-        // No valid session, initialize with default state and set loading to false
-        dispatch({ type: "SET_LOADING", payload: false });
-
-        if (!isAuthPage){
-          toast.error('Session expired. Please sign in again.', { duration: 5000 });
-          router.push('/auth/sign-in?redirectUrl=' + encodeURIComponent(window.location.pathname));
+        // Step 2: Validate user data by fetching from /me endpoint
+        let userData = session.user;
+        
+        try {
+          // Always fetch fresh user data to ensure it's valid and up-to-date
+          const meResponse = await authApi.getMe();
+          userData = meResponse.data;
+        } catch (error: any) {
+          console.error("Failed to fetch user data from /me:", error);
+          await forceSignOut(!isAuthPage);
+          return;
         }
-      } catch (error: any) {
+
+        // Step 3: Validate that user data is complete and valid
+        if (!userData || !userData.id) {
+          console.error("Invalid user data received:", userData);
+          await forceSignOut(!isAuthPage);
+          return;
+        }
+
+        // Step 4: User is fully authenticated and validated
         dispatch({
           type: "INITIALIZE",
-          payload: { ...initialState, isLoading: false, error: error.message },
+          payload: {
+            ...initialState,
+            isAuthenticated: true,
+            user: userData,
+            error: null,
+            isLoading: false,
+          },
         });
-        if (!isAuthPage) router.push("/auth/sign-in");
+
+        // Step 5: Handle routing based on user status (only if on auth page)
+        if (isAuthPage) {
+          switch (userData.status) {
+            case UserStatus.INACTIVE:
+              router.push('/inactive');
+              break;
+            case UserStatus.ACTIVE:
+              router.push("/app");
+              break;
+            default:
+              router.push("/account/status");
+              break;
+          }
+        }
+
+      } catch (error: any) {
+        console.error("Auth initialization error:", error);
+        
+        // Any unexpected error during auth init should force sign out
+        await forceSignOut(!isAuthPage);
       }
     };
 
     if (!state.isInitialized && mounted) {
       initAuth();
     }
-  }, [router, isAuthPage, state.isInitialized, mounted]);
+  }, [router, isAuthPage, state.isInitialized, mounted, forceSignOut]);
 
   const signIn = useCallback(
     async (input: LoginInput): Promise<{ user: User | null; error?: { code: string; message: string } }> => {
       dispatch({ type: "SET_LOADING", payload: true });
       try {
-
         const user = (await authApi.login(input)).data;
-        if (user) {
-          dispatch({
-            type: "UPDATE_SESSION",
-            payload: {
-              isAuthenticated: true,
-              isLoading: false,
-              user: user,
-              error: null,
-            },
-          });
-          return { user: user, error: undefined };
+        
+        if (!user || !user.id) {
+          throw new Error("Invalid user data received from login");
         }
-        throw new Error("Sign in failed");
-      } catch (error: any) {   
-        const errorMessage = error.message;
+
+        dispatch({
+          type: "UPDATE_SESSION",
+          payload: {
+            isAuthenticated: true,
+            isLoading: false,
+            user: user,
+            error: null,
+          },
+        });
+        
+        return { user: user, error: undefined };
+      } catch (error: any) {
+        const errorMessage = error.message || "Sign in failed";
         
         dispatch({ type: "SET_LOADING", payload: false });
         dispatch({ type: "SET_ERROR", payload: errorMessage });
-       
-        return { 
-          user: null, 
-          error: { 
-            code: 'UNKNOWN_ERROR', 
-            message: errorMessage 
-          } 
+
+        return {
+          user: null,
+          error: {
+            code: error.status === 401 ? 'INVALID_CREDENTIALS' : 'UNKNOWN_ERROR',
+            message: errorMessage
+          }
         };
       }
     },
-    [authApi]
+    []
   );
 
   const signOut = useCallback(async () => {
-
     dispatch({ type: "SET_LOADING", payload: true });
     try {
       await authApi.signOut();
       dispatch({ type: "SIGN_OUT" });
       router.push("/auth/sign-in");
     } catch (error: any) {
-      toast.error("Failed to sign out. Please try again.");
-      dispatch({ type: "SET_ERROR", payload: "Failed to sign out" });
-      dispatch({ type: "SET_LOADING", payload: false });
+      console.error("Sign out error:", error);
+      // Even if API sign out fails, clear local state and redirect
+      dispatch({ type: "SIGN_OUT" });
+      router.push("/auth/sign-in");
+      toast.error("Signed out (with some issues). Please sign in again.");
     }
-  }, [authApi, router]);
+  }, [router]);
 
   const signUp = useCallback(async (input: RegisterInput): Promise<User> => {
     dispatch({ type: "SET_LOADING", payload: true });
 
     try {
       const user = (await authApi.signUp(input)).data;
-      return user
+      
+      if (!user || !user.id) {
+        throw new Error("Invalid user data received from registration");
+      }
+      
+      return user;
     } catch (error: any) {
-      toast.error(error.message);
-      dispatch({ type: "SET_ERROR", payload: error.message });
+      const errorMessage = error.message || "Registration failed";
+      toast.error(errorMessage);
+      dispatch({ type: "SET_ERROR", payload: errorMessage });
       throw error;
     } finally {
       dispatch({ type: "SET_LOADING", payload: false });
     }
-  }, [authApi]);
+  }, []);
 
   const value = useMemo(
     () => ({
@@ -238,23 +287,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return (
       <main className="w-screen h-screen flex flex-col items-center justify-center gap-4">
         <LoaderPinwheelIcon className="h-12 w-12 animate-spin mb-4" />
-
         <h6>
-          <Link href={'https://abhinandan.pro'} target="_blank" className="text-primary font-semibold mr-2">Abhinandan</Link> is trying to mount up the React Context...
+          <Link href={'https://abhinandan.pro'} target="_blank" className="text-primary font-semibold mr-2">
+            Abhinandan
+          </Link> 
+          is trying to mount up the React Context...
         </h6>
       </main>
-    )
+    );
   }
 
   if (!state.isInitialized && !isAuthPage) {
     return (
       <section className="flex flex-col items-center justify-center h-screen w-screen gap-4">
-        <LoaderPinwheelIcon
-          className="h-12 w-12 animate-spin mb-4"
-        />
-
+        <LoaderPinwheelIcon className="h-12 w-12 animate-spin mb-4" />
         <h6>
-          <Link href={'https://abhinandan.pro'} target="_blank" className="text-primary font-semibold mr-2">Abhinandan</Link> is initializing the useAuth to make sure its you ❤️
+          <Link href={'https://abhinandan.pro'} target="_blank" className="text-primary font-semibold mr-2">
+            Abhinandan
+          </Link> 
+          is initializing the useAuth to make sure its you ❤️
         </h6>
       </section>
     );

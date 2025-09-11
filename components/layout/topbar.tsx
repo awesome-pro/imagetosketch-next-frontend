@@ -36,7 +36,7 @@ export function TopBar() {
   const { theme, setTheme } = useTheme();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const showBackButton = pathname !== '/dashboard';
+  const showBackButton = pathname !== '/app';
 
   const handleBack = () => {
     router.back();
@@ -139,14 +139,14 @@ export function TopBar() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 
-                  onSelect={() => router.push('/dashboard/profile')}
+                  onSelect={() => router.push('/app/profile')}
                   className="cursor-pointer"
                 >
                   <User className="mr-2 h-4 w-4" />
                   <span>Profile </span>
                 </DropdownMenuItem>
                 <DropdownMenuItem 
-                  onSelect={() => router.push('/dashboard/settings')}
+                  onSelect={() => router.push('/app/settings')}
                   className="cursor-pointer"
                 >
                   <Settings2 className="mr-2 h-4 w-4" />

@@ -32,19 +32,19 @@ const getNavigationItems = (userRole: UserRole) => {
   const baseItems = [
     {
       title: 'Dashboard',
-      url: '/dashboard',
+      url: '/app',
       icon: Home,
       description: 'Overview and analytics',
     },
     {
       title: 'Sketches',
-      url: '/dashboard/sketches',
+      url: '/app/sketches',
       icon: LinkIcon,
       description: 'Manage your Sketches',
     },
     {
       title: 'Profile',
-      url: '/dashboard/profile',
+      url: '/app/profile',
       icon: User,
       description: 'Your account settings',
     },
@@ -53,25 +53,25 @@ const getNavigationItems = (userRole: UserRole) => {
   const adminItems = [
     {
       title: 'Users',
-      url: '/dashboard/users',
+      url: '/app/users',
       icon: Users,
       description: 'Manage users',
     },
     {
       title: 'Analytics',
-      url: '/dashboard/analytics',
+      url: '/app/analytics',
       icon: BarChart3,
       description: 'System analytics',
     },
     {
       title: 'Sketches',
-      url: '/dashboard/sketches',
+      url: '/app/sketches',
       icon: FileText,
       description: 'Manage your Sketches',
     },
     {
       title: 'Users',
-      url: '/dashboard/users',
+      url: '/app/users',
       icon: Shield,
       description: 'Manage users',
     },
@@ -103,7 +103,7 @@ export function AppSidebar({ ...props }) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader className="border-b flex items-center justify-center">
-        <Link href="/dashboard">
+        <Link href="/app">
           <Image src="/logo.png" alt="Image to Sketch" width={132} height={32}/>
         </Link>
       </SidebarHeader>

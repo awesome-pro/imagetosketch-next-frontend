@@ -57,7 +57,7 @@ export default function SignUp() {
           duration: 2000,
         });
         setTimeout(() => {
-          router.push('/dashboard');
+          router.push('/app');
         }, 2000);
       }
     } catch (error: any) {

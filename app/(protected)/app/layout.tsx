@@ -114,7 +114,7 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
   if (user.status !== UserStatus.ACTIVE) {
     const handleStatusAction = () => {
       const redirectMap = {
-        [UserStatus.ACTIVE]: '/dashboard',
+        [UserStatus.ACTIVE]: '/app',
         [UserStatus.SUSPENDED]: '/suspended',
         [UserStatus.INACTIVE]: '/inactive',
         [UserStatus.VERIFICATION_PENDING]: '/verification-pending'

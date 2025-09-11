@@ -1,4 +1,5 @@
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
+import { toast } from "sonner";
 
 const baseURL = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api` || 'http://localhost:8080/api'
 
@@ -91,6 +92,7 @@ api.interceptors.response.use(
     const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
     
     if (!error.response) {
+      toast.error('Network error - please check your connection');
       return Promise.reject(new Error('Network error - please check your connection'));
     }
     

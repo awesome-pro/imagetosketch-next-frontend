@@ -47,7 +47,7 @@ export default function GoogleCallbackPage() {
           setTimeout(() => {
             switch(user.status) {
               case UserStatus.ACTIVE:
-                router.push('/dashboard')
+                router.push('/app')
                 break
               case UserStatus.INACTIVE:
                 router.push('/auth/inactive')
