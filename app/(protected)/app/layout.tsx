@@ -9,13 +9,9 @@ import { UserStatus } from '@/types';
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-// import { FileUploadProvider } from '@/contexts/file-upload-context';
 import { TopBar } from '@/components/layout/topbar';
-import { LoaderPinwheel } from 'lucide-react';
+import { LoaderIcon } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-import { FaExclamation } from 'react-icons/fa';
-import Link from 'next/link';
-import { toast } from 'sonner';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -87,7 +83,7 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
   if (!isInitialized || isLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-screen gap-4">
-        <LoaderPinwheel className="h-12 w-12 animate-spin mb-4 text-primary" />
+        <LoaderIcon className="h-6 w-6 animate-spin mb-4 text-primary" />
         <h6>
            You are so beautiful 🥰, so cute 😍. Can you please wait a few seconds?
         </h6>
@@ -97,24 +93,10 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   // Handle unauthenticated users
   if (!user) {
-    toast.loading('Redirecting to sign in...', {
-      duration: 2000,
-      id: 'redirect'
-    })
-    setTimeout(() => {
-      window.location.href = '/auth/sign-in';
-      toast.dismiss('redirect');
-    }, 2000);
+    window.location.href = '/auth/sign-in';
     return (
       <div className="flex items-center justify-center h-screen flex-col gap-4">
-        <LoaderPinwheel className="h-12 w-12 animate-spin mb-4 text-primary" />
-        <h6>
-           Unhoon, I couldn&apos;t find you.  Let me try again ⚡️
-        </h6>
-
-        <p className="text-sm text-muted-foreground">
-          if it doesn&apos;t work, please click <Link href="/auth/sign-in" className="text-primary">here</Link>
-        </p>
+        <LoaderIcon className="h-6 w-6 animate-spin mb-4 text-primary" />
       </div>  
     );
   }

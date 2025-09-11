@@ -13,7 +13,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { LoginInput, RegisterInput, User, UserStatus } from "@/types";
 import authApi from "@/services/auth.service";
-import { LoaderPinwheelIcon } from "lucide-react";
+import { LoaderIcon } from "lucide-react";
 import Link from "next/link";
 
 interface AuthState {
@@ -82,16 +82,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const isAuthPage = pathname?.startsWith("/auth/");
 
-  // Helper function to clear any existing session/cookies and redirect to sign-in
   const forceSignOut = useCallback(async (showToast = true) => {
     try {
-      // Clear any server-side session
       await fetch("/api/auth/session", {
         method: "DELETE",
         credentials: "include",
       });
     } catch (error) {
-      // Ignore errors when clearing session
       console.warn("Failed to clear server session:", error);
     }
 
@@ -245,7 +242,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       router.push("/auth/sign-in");
     } catch (error: any) {
       console.error("Sign out error:", error);
-      // Even if API sign out fails, clear local state and redirect
       dispatch({ type: "SIGN_OUT" });
       router.push("/auth/sign-in");
       toast.error("Signed out (with some issues). Please sign in again.");
@@ -286,7 +282,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   if (!mounted) {
     return (
       <main className="w-screen h-screen flex flex-col items-center justify-center gap-4">
-        <LoaderPinwheelIcon className="h-12 w-12 animate-spin mb-4" />
+        <LoaderIcon className="h-6 w-6 animate-spin mb-4" />
         <h6>
           <Link href={'https://abhinandan.pro'} target="_blank" className="text-primary font-semibold mr-2">
             Abhinandan
@@ -300,7 +296,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   if (!state.isInitialized && !isAuthPage) {
     return (
       <section className="flex flex-col items-center justify-center h-screen w-screen gap-4">
-        <LoaderPinwheelIcon className="h-12 w-12 animate-spin mb-4" />
+        <LoaderIcon className="h-6 w-6 animate-spin mb-4" />
         <h6>
           <Link href={'https://abhinandan.pro'} target="_blank" className="text-primary font-semibold mr-2">
             Abhinandan

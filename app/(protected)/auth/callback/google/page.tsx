@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { LoaderIcon, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
@@ -10,7 +10,6 @@ import { UserStatus } from '@/types'
 import Link from 'next/link'
 
 export default function GoogleCallbackPage() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
   const [errorMessage, setErrorMessage] = useState('')
@@ -43,17 +42,16 @@ export default function GoogleCallbackPage() {
           setStatus('success')
           toast.success('Successfully signed in with Google!')
           
-          // Redirect based on user status
           setTimeout(() => {
             switch(user.status) {
               case UserStatus.ACTIVE:
-                router.push('/app')
+                 window.location.href = '/dashboard'
                 break
               case UserStatus.INACTIVE:
-                router.push('/auth/inactive')
+                window.location.href = '/auth/inactive'
                 break
               default:
-                router.push('/auth/status')
+                window.location.href = '/auth/status'
                 break
             }
           }, 1000)
@@ -68,13 +66,13 @@ export default function GoogleCallbackPage() {
         
         // Redirect to sign-in page after a delay
         setTimeout(() => {
-          router.push('/auth/sign-in?error=oauth_failed')
+          window.location.href = '/auth/sign-in?error=oauth_failed'
         }, 3000)
       }
     }
 
     handleCallback()
-  }, [searchParams, router])
+  }, [searchParams])  
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-200 dark:bg-gradient-to-br from-slate-700 to-slate-900">
