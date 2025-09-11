@@ -82,17 +82,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const isAuthPage = pathname?.startsWith("/auth/");
 
-  // Helper function to clear any existing session/cookies and redirect to sign-in
   const forceSignOut = useCallback(async (showToast = true) => {
     try {
-      // Clear any server-side session
+      await authApi.signOut();
       await fetch("/api/auth/session", {
         method: "DELETE",
         credentials: "include",
       });
     } catch (error) {
-      // Ignore errors when clearing session
-      console.warn("Failed to clear server session:", error);
+      console.log("Failed to clear server session:", error);
     }
 
     dispatch({ type: "RESET_TO_UNAUTHENTICATED" });
@@ -241,6 +239,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     dispatch({ type: "SET_LOADING", payload: true });
     try {
       await authApi.signOut();
+
+      await fetch("/api/auth/session", {
+        method: "DELETE",
+        credentials: "include",
+      });
+
       dispatch({ type: "SIGN_OUT" });
       router.push("/auth/sign-in");
     } catch (error: any) {

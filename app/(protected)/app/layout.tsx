@@ -9,12 +9,13 @@ import { UserStatus } from '@/types';
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-// import { FileUploadProvider } from '@/contexts/file-upload-context'
+// import { FileUploadProvider } from '@/contexts/file-upload-context';
 import { TopBar } from '@/components/layout/topbar';
 import { LoaderPinwheel } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { FaExclamation } from 'react-icons/fa';
 import Link from 'next/link';
+import { toast } from 'sonner';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -96,6 +97,14 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   // Handle unauthenticated users
   if (!user) {
+    toast.loading('Redirecting to sign in...', {
+      duration: 2000,
+      id: 'redirect'
+    })
+    setTimeout(() => {
+      window.location.href = '/auth/sign-in';
+      toast.dismiss('redirect');
+    }, 2000);
     return (
       <div className="flex items-center justify-center h-screen flex-col gap-4">
         <LoaderPinwheel className="h-12 w-12 animate-spin mb-4 text-primary" />
@@ -114,7 +123,7 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
   if (user.status !== UserStatus.ACTIVE) {
     const handleStatusAction = () => {
       const redirectMap = {
-        [UserStatus.ACTIVE]: '/app',
+        [UserStatus.ACTIVE]: '/dashboard',
         [UserStatus.SUSPENDED]: '/suspended',
         [UserStatus.INACTIVE]: '/inactive',
         [UserStatus.VERIFICATION_PENDING]: '/verification-pending'
